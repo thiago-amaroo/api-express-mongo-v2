@@ -9,7 +9,9 @@ class AutorController {
       res.status(200).json(autoresResultado);
       
     } catch (erro) {
-      next(erro);
+      //aqui ele chama o proximo middleware do app.js passando o erro. O proximo middleware de app é a funcao que esta em 
+      //manipualdorDeErros.js que manipula e responde aos erros. Todo middeware precisa responder à requisicao ou dar next pro proximo middleware
+      next(erro); 
     }
   };
 

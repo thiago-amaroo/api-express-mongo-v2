@@ -19,7 +19,7 @@ class LivroController {
       const id = req.params.id;
 
       const livroResultados = await livros.findById(id)
-        .populate("autor", "nome")
+        .populate("autor", "nome") //propriedade autor do objeto livro vai ter apenas a propriedade nome do autor. Se deixar sem "nome" pega todas as propriedades de autor
         .exec();
 
       res.status(200).send(livroResultados);
