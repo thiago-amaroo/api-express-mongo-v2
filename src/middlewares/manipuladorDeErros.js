@@ -1,29 +1,27 @@
 import mongoose from "mongoose";
+import ErroBase from "../erros/ErroBase.js";
+import RequisicaoIncorreta from "../erros/RequisicaoIncorreta.js";
+import ErroValidacao from "../erros/ErroValidacao.js";
 
-//criando middleware para ser usado em todas as requisicoes. Middleware para erros
-//Intercepta qq erro lancado pela aplicacao - para nao repetir codigo nos controladores
-//express identifica esse middleware como tratamento de erros por causa dos 4 parametros
 // eslint-disable-next-line no-unused-vars
 function manipuladorDeErros (erro, req, res, next)  {
-  //imprimindo erro no console para desenvolvedor saber qual erro é
-  console.log(erro);
 
-  //se o erro for gerado pelo mongoose, ex: id tem que ter 24 caracteres. se nao tiver mongoose retorna erro
-  //consigo pegar esses erros do mongoose verificando se erro do catch é instancia do mongoose.Error.CastErro
+
   if (erro instanceof mongoose.Error.CastError ) {
-    res.status(400).send({message: "Um ou mais dados fornecidos estão incorretos. "});
-  } else if (erro instanceof mongoose.Error.ValidationError ) { //Se o erro for do mongoose de validacao, Ex: deixar campo required em branco
-    //erro instancia do mongoose tem um objeto errors com propriedades especificas do erro
-    //Object.values(erro.errors) é um array só dos valores dessas propriedades. No caso, nesse array, cada elemento é um objeto com as propriedades
-    ///dos campos que sao requiridos e nao foram preenchidos. 
-    //Vou usar map para iterar sobre os elementos desse array e fazer o objeto todo (cada elemento) virar só o texto do erro.message
-    const mensagensErro = Object.values(erro.errors)
-      .map((erro) => erro.message)
-      .join("; ");
+    new RequisicaoIncorreta().enviarResposta(res);
 
-    res.status(400).send("Os seguintes campos são exigidos: " + mensagensErro);
+  } else if (erro instanceof mongoose.Error.ValidationError ) { 
+    new ErroValidacao(erro).enviarResposta(res);
+
+  } 
+  //se erro for criado com classe NaoEncontrador ou RequisicaoIncorreta, ou qq um que herde de ErroBase, sera instancia de ErroBase tbm
+  else if (erro instanceof ErroBase) {
+    erro.enviarResposta(res); 
+    //middleware manipulador404.js manda instancia de NaoEncontrado para este middleware e este recebe em erro. Entao tenho acesso ao metodo enviar resposta na variavel erro
+    //nesse caso, erro = const erro404 que manipulador404 passou para manipuladorDeErros
+
   } else {
-    res.status(500).send({messagem: `Erro interno de servidor: ${erro}`});
+    new ErroBase().enviarResposta(res);
   }
 };
 

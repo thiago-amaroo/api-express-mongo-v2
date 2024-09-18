@@ -1,12 +1,13 @@
-import autores from "../models/Autor.js";
+import NaoEncontrado from "../erros/NaoEncontrado.js";
+import { autores } from "../models/index.js";
 
 class AutorController {
 
   static listarAutores = async(req, res, next) => {
     try {
-      const autoresResultado = await autores.find();
-
-      res.status(200).json(autoresResultado);
+      const autoresResultado = autores.find();
+      req.resultado = autoresResultado;
+      next();
       
     } catch (erro) {
       //aqui ele chama o proximo middleware do app.js passando o erro. O proximo middleware de app é a funcao que esta em 
@@ -24,7 +25,7 @@ class AutorController {
       if(autorResultado !== null) {
         res.status(200).send(autorResultado);
       } else {
-        res.status(404).send({message: "Id do Autor não localizado."}); 
+        next(new NaoEncontrado("Id do Autor não localizado")); //next para proximo middleware em app.js que recebe um objeto erro (manipuladorDeErros)
       }
     } catch (erro) {
       //todo metodo controlador pode receber next como parametro. Aqui, pego o erro e jogo pro middleware que controla os erros
@@ -50,10 +51,13 @@ class AutorController {
   static atualizarAutor = async (req, res, next) => {
     try {
       const id = req.params.id;
-  
-      await autores.findByIdAndUpdate(id, {$set: req.body});
-  
-      res.status(200).send({message: "Autor atualizado com sucesso"});
+      const encontraAutor = await autores.findByIdAndUpdate(id, {$set: req.body});
+      
+      if( encontraAutor !== null) {
+        res.status(200).send({message: "Autor atualizado com sucesso"});
+      } else {
+        next(new NaoEncontrado("Autor não localizado para atualização.")); //next para proximo middleware em app.js que recebe erro (manipuladorDeErros)
+      }
     } catch (erro) {
       next(erro);
     }
@@ -62,10 +66,13 @@ class AutorController {
   static excluirAutor = async (req, res, next) => {
     try {
       const id = req.params.id;
-  
-      await autores.findByIdAndDelete(id);
-  
-      res.status(200).send({message: "Autor removido com sucesso"});
+      const encontraAutor = await autores.findByIdAndDelete(id);
+
+      if(encontraAutor !== null) {
+        res.status(200).send({message: "Autor removido com sucesso"});
+      } else {
+        next(new NaoEncontrado("Autor não encontrado para exclusão"));
+      }
     } catch (erro) {
       next(erro);
     }
